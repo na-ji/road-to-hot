@@ -37,7 +37,7 @@ var syncFetch = function(url, times, max) {
 		if (times >= max){
 			process.exit();
 		} else {
-			asyncFetch('http://9gag.com' + response.loadMoreUrl, ++times, max);
+			syncFetch('http://9gag.com' + response.loadMoreUrl, ++times, max);
 		}
 	});
 };
@@ -55,5 +55,5 @@ request.get({
 	});
 	console.log($('.badge-load-more-post').attr('href'));
 
-	asyncFetch('http://9gag.com' + $('.badge-load-more-post').attr('href'), 0, 3);
+	syncFetch('http://9gag.com' + $('.badge-load-more-post').attr('href'), 0, 3);
 });
