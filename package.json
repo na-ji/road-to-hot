@@ -1,0 +1,12 @@
+{
+  "name": "road-to-hot",
+  "version": "1.0.0",
+  "description": "Road to 9GAG hot section",
+  "author": "Naji Astier",
+  "license": "WTFPL",
+  "dependencies": {
+    "cheerio": "^0.22.0",
+    "lodash": "^4.16.5",
+    "request": "^2.76.0"
+  }
+}
