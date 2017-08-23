@@ -1,6 +1,8 @@
 const request  = require('request');
 const cheerio  = require('cheerio');
 const _        = require('lodash');
+const moment   = require('moment');
+
 const { db, Post } = require('./db');
 
 process.on('unhandledRejection', (err) => {
@@ -10,7 +12,7 @@ process.on('unhandledRejection', (err) => {
 
 const headers = {
     'Accept': 'application/json, text/javascript, */*; q=0.01',
-    'Referer': 'http://9gag.com/fresh',
+    'Referer': 'https://9gag.com/fresh',
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/60.0.3112.78 Chrome/60.0.3112.78 Safari/537.36',
     'X-Requested-With': 'XMLHttpRequest'
 };
@@ -18,6 +20,7 @@ const headers = {
 const parseArticles = function (rawHTML) {
     let $ = cheerio.load(rawHTML);
     let posts = [];
+    let nextUpdate = moment().minute(Math.ceil(moment().minute() / 20) * 20).second(0).millisecond(0).subtract(1, 'minutes').toDate();
 
     $('article.badge-entry-container').each(function () {
         let post = {
@@ -26,7 +29,9 @@ const parseArticles = function (rawHTML) {
             votes: $(this).attr('data-entry-votes'),
             comments: $(this).attr('data-entry-comments'),
             title: $(this).children('header').text().trim(),
-            fetched: new Date()
+            fetched: new Date(),
+            nextUpdate: nextUpdate,
+            updateNumber: 1
         };
 
         posts.push(post);
@@ -35,7 +40,7 @@ const parseArticles = function (rawHTML) {
     return posts;
 };
 
-const persisPosts = async function (datas) {
+const persistPosts = async function (datas) {
     let persisted = 0;
 
     await db.connection();
@@ -54,7 +59,7 @@ const persisPosts = async function (datas) {
     return persisted;
 };
 
-const syncFetch = function (url, times, max) {
+const loadMore = function (url, times, max) {
     request.get({
         url: url,
         headers: headers
@@ -66,29 +71,29 @@ const syncFetch = function (url, times, max) {
             posts = posts.concat(parseArticles(item));
         });
 
-        const persisted = await persisPosts(posts);
+        const persisted = await persistPosts(posts);
 
         if (persisted < 10 || times >= max) {
             process.exit();
         } else {
             console.log(response.loadMoreUrl);
-            syncFetch('http://9gag.com' + response.loadMoreUrl, ++times, max);
+            loadMore('https://9gag.com' + response.loadMoreUrl, ++times, max);
         }
     });
 };
 
 request.get({
-    url: 'http://9gag.com/fresh'
+    url: 'https://9gag.com/fresh'
 }, async function (err, httpResponse, body) {
     let $ = cheerio.load(body);
     let posts = parseArticles(body);
-    const persisted = await persisPosts(posts);
+    const persisted = await persistPosts(posts);
 
     if (persisted < 10) {
         process.exit();
     } else {
         console.log($('.badge-load-more-post').attr('href'));
 
-        syncFetch('http://9gag.com' + $('.badge-load-more-post').attr('href'), 0, 10);
+        loadMore('https://9gag.com' + $('.badge-load-more-post').attr('href'), 0, 10);
     }
 });
