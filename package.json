@@ -5,6 +5,8 @@
   "author": "Naji Astier",
   "license": "WTFPL",
   "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.8.5",
     "cheerio": "^1.0.0-rc.2",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",
